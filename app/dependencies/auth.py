@@ -11,15 +11,41 @@ from app.models.user import User
 
 
 async def get_token_from_request(request: Request) -> str:
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        return auth_header.split(" ")[1]
+    # 1. Authorization header (Bearer token or raw token)
+    auth_header = request.headers.get("Authorization") or request.headers.get("authorization")
+    if auth_header:
+        auth_header = auth_header.strip()
+        if auth_header.lower().startswith("bearer "):
+            parts = auth_header.split(" ", 1)
+            if len(parts) > 1 and parts[1].strip():
+                return parts[1].strip()
+        elif " " not in auth_header and len(auth_header) > 20:
+            return auth_header
 
-    cookie_token = request.cookies.get("access_token")
-    if cookie_token:
-        return cookie_token
+    # 2. Alternative custom headers (X-Access-Token, X-Auth-Token)
+    alt_header = (
+        request.headers.get("X-Access-Token")
+        or request.headers.get("X-Auth-Token")
+        or request.headers.get("x-access-token")
+    )
+    if alt_header and alt_header.strip():
+        return alt_header.strip()
 
-    raise AuthenticationError("Authentication token missing. Provide Bearer token or HttpOnly cookie.")
+    # 3. HttpOnly Cookies (access_token, accessToken, token)
+    cookie_token = (
+        request.cookies.get("access_token")
+        or request.cookies.get("accessToken")
+        or request.cookies.get("token")
+    )
+    if cookie_token and cookie_token.strip():
+        return cookie_token.strip()
+
+    # 4. Query Parameters (token, access_token)
+    query_token = request.query_params.get("token") or request.query_params.get("access_token")
+    if query_token and query_token.strip():
+        return query_token.strip()
+
+    raise AuthenticationError("Authentication token missing. Provide Bearer token in Authorization header or HttpOnly cookie.")
 
 
 async def get_current_user(
