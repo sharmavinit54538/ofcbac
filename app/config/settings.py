@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     PORT: int = 8000
     HOST: str = "0.0.0.0"
 
-    # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ofc_hr"
+    # Database (Defaults to SQLite for local zero-setup dev, overridden by .env for Supabase Postgres)
+    DATABASE_URL: str = "sqlite+aiosqlite:///./ofc_hr.db"
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
 

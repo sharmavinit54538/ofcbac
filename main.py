@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.settings import settings
+from app.core.database import engine, Base
+import app.models  # Register all database models
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging, logger
 from app.core.response import success_response
@@ -19,6 +20,12 @@ setup_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} in {settings.APP_ENV} mode.")
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables initialized successfully.")
+    except Exception as e:
+        logger.error(f"Database initialization error: {e}")
     yield
     logger.info(f"Shutting down {settings.APP_NAME}.")
 
