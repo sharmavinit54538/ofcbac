@@ -118,7 +118,18 @@ class ResetPasswordRequest(BaseModel):
 
 
 class GoogleOAuthRequest(BaseModel):
-    id_token: str
+    id_token: Optional[str] = None
+    credential: Optional[str] = None
+    token: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_token(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            token_val = data.get("credential") or data.get("id_token") or data.get("token")
+            if token_val:
+                data["id_token"] = str(token_val)
+        return data
 
 
 class OktaSSORequest(BaseModel):
