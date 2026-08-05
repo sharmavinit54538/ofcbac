@@ -28,10 +28,19 @@ async def test_register_and_verify_email(client: AsyncClient):
 
     otp = body["data"]["otp_debug"]
 
-    # Step 2: Verify Email
+    # Step 2: Resend Verification OTP
+    resend_res = await client.post(
+        "/auth/resend-verification",
+        json={"email": "john.doe@example.com"}
+    )
+    assert resend_res.status_code == 200
+    new_otp = resend_res.json()["data"]["otp_debug"]
+    assert new_otp is not None
+
+    # Step 3: Verify Email with new OTP
     verify_res = await client.post(
         "/auth/verify-email",
-        json={"email": "john.doe@example.com", "otp": otp}
+        json={"email": "john.doe@example.com", "otp": new_otp}
     )
     assert verify_res.status_code == 200
     assert verify_res.json()["data"]["is_verified"] is True

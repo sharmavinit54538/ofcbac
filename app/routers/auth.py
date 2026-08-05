@@ -10,7 +10,7 @@ from app.services.oauth_service import OAuthService
 from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.schemas.auth import (
-    RegisterRequest, VerifyEmailRequest, LoginRequest,
+    RegisterRequest, VerifyEmailRequest, ResendVerificationRequest, LoginRequest,
     RefreshTokenRequest, ForgotPasswordRequest, ResetPasswordRequest,
     GoogleOAuthRequest, OktaSSORequest
 )
@@ -86,6 +86,24 @@ async def verify_email(
     return success_response(
         data={"email": payload.email, "is_verified": True},
         message="Email verified successfully.",
+        request_id=request_id
+    )
+
+
+@router.post("/resend-verification")
+@router.post("/verify-email/resend")
+async def resend_verification(
+    payload: ResendVerificationRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_async_db)
+):
+    auth_service = AuthService(db)
+    result = await auth_service.resend_verification_otp(payload.email)
+
+    request_id = getattr(request.state, "request_id", None)
+    return success_response(
+        data=result,
+        message=result["message"],
         request_id=request_id
     )
 

@@ -137,6 +137,43 @@ class AuthService:
         await self.db.commit()
         return True
 
+    async def resend_verification_otp(self, email: str) -> Dict[str, Any]:
+        user = await self.user_repo.get_by_email(email)
+        if not user:
+            return {
+                "message": "If the email is registered and not verified, a new verification code has been sent.",
+                "otp_debug": None
+            }
+
+        if user.is_verified:
+            return {
+                "message": "Email is already verified.",
+                "otp_debug": None
+            }
+
+        new_otp = generate_otp()
+        user.verification_otp = new_otp
+        user.verification_otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+
+        await self.audit_service.log_event(
+            action="RESEND_VERIFICATION_OTP_REQUESTED",
+            user_id=user.id,
+            details=f"New verification OTP generated for {user.email}"
+        )
+        await self.db.commit()
+
+        # Send HTML email verification OTP
+        await EmailService.send_verification_email(
+            to_email=user.email,
+            first_name=user.first_name,
+            otp_code=new_otp
+        )
+
+        return {
+            "message": "A new verification code has been sent to your email address.",
+            "otp_debug": new_otp
+        }
+
     async def login(
         self,
         login_data: Any,
