@@ -7,8 +7,16 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 
 from app.core.database import Base, get_async_db
 from app.middleware.rate_limit_middleware import RateLimitMiddleware
+from app.services.email_service import EmailService
 import app.models
 from main import app as fastapi_app
+
+# Mock EmailService for unit tests
+async def _mock_send_email(*args, **kwargs):
+    return True
+
+EmailService.send_verification_email = classmethod(lambda cls, *args, **kwargs: _mock_send_email())
+EmailService.send_password_reset_email = classmethod(lambda cls, *args, **kwargs: _mock_send_email())
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
