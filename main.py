@@ -3,7 +3,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.settings import settings
-from app.core.database import engine, Base
+from app.core import database
+from app.core.database import Base
 import app.models  # Register all database models
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging, logger
@@ -21,11 +22,17 @@ setup_logging()
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} in {settings.APP_ENV} mode.")
     try:
-        async with engine.begin() as conn:
+        async with database.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables initialized successfully.")
     except Exception as e:
-        logger.error(f"Database initialization error: {e}")
+        logger.error(f"Database connection error ({e}). Falling back to local SQLite database.")
+        if not settings.DATABASE_URL.startswith("sqlite"):
+            database.engine = database._create_engine_for_url("sqlite+aiosqlite:///./ofc_hr.db")
+            database.AsyncSessionLocal.configure(bind=database.engine)
+            async with database.engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            logger.info("Local SQLite fallback database initialized successfully.")
     yield
     logger.info(f"Shutting down {settings.APP_NAME}.")
 

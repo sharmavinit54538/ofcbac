@@ -2,24 +2,28 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from app.config.settings import settings
+from app.core.logging import logger
 
-engine_kwargs = {
-    "echo": False,
-    "future": True,
-}
 
-if settings.DATABASE_URL.startswith("postgresql"):
-    engine_kwargs.update({
-        "pool_size": settings.DB_POOL_SIZE,
-        "max_overflow": settings.DB_MAX_OVERFLOW,
-        "pool_pre_ping": True,
-    })
-elif settings.DATABASE_URL.startswith("sqlite"):
-    engine_kwargs.update({
-        "connect_args": {"check_same_thread": False}
-    })
+def _create_engine_for_url(db_url: str):
+    engine_kwargs = {
+        "echo": False,
+        "future": True,
+    }
+    if db_url.startswith("postgresql"):
+        engine_kwargs.update({
+            "pool_size": settings.DB_POOL_SIZE,
+            "max_overflow": settings.DB_MAX_OVERFLOW,
+            "pool_pre_ping": True,
+        })
+    elif db_url.startswith("sqlite"):
+        engine_kwargs.update({
+            "connect_args": {"check_same_thread": False}
+        })
+    return create_async_engine(db_url, **engine_kwargs)
 
-engine = create_async_engine(settings.DATABASE_URL, **engine_kwargs)
+
+engine = _create_engine_for_url(settings.DATABASE_URL)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
