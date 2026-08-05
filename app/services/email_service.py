@@ -43,34 +43,178 @@ class EmailService:
 
     @classmethod
     async def send_verification_email(cls, to_email: str, first_name: str, otp_code: str) -> bool:
-        subject = "OFC HR - Verify Your Email Address"
+        subject = f"{otp_code} is your OFC HR email verification code"
         html_content = f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>OFC HR Verification</title>
             <style>
-                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }}
-                .card {{ max-width: 500px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
-                .header {{ text-align: center; border-bottom: 2px solid #4F46E5; padding-bottom: 15px; margin-bottom: 20px; }}
-                .header h1 {{ color: #4F46E5; font-size: 24px; margin: 0; }}
-                .otp-box {{ background: #EEF2FF; border: 2px dashed #4F46E5; border-radius: 8px; text-align: center; padding: 15px; margin: 25px 0; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4F46E5; }}
-                .footer {{ text-align: center; color: #6B7280; font-size: 12px; margin-top: 25px; }}
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                    background-color: #F8FAFC;
+                    margin: 0;
+                    padding: 0;
+                    -webkit-font-smoothing: antialiased;
+                }}
+                .wrapper {{
+                    width: 100%;
+                    table-layout: fixed;
+                    background-color: #F8FAFC;
+                    padding: 40px 0;
+                }}
+                .container {{
+                    max-width: 560px;
+                    margin: 0 auto;
+                    background-color: #FFFFFF;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+                    border: 1px solid #E2E8F0;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #312E81 100%);
+                    padding: 36px 32px;
+                    text-align: center;
+                }}
+                .brand-title {{
+                    color: #FFFFFF;
+                    font-size: 26px;
+                    font-weight: 800;
+                    letter-spacing: -0.5px;
+                    margin: 0;
+                    text-transform: uppercase;
+                }}
+                .brand-sub {{
+                    color: #A5B4FC;
+                    font-size: 11px;
+                    font-weight: 600;
+                    letter-spacing: 2px;
+                    margin-top: 4px;
+                    text-transform: uppercase;
+                }}
+                .body-content {{
+                    padding: 40px 36px;
+                    color: #334155;
+                }}
+                .greeting {{
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: #0F172A;
+                    margin-top: 0;
+                    margin-bottom: 12px;
+                }}
+                .intro-text {{
+                    font-size: 15px;
+                    line-height: 1.6;
+                    color: #475569;
+                    margin-top: 0;
+                    margin-bottom: 28px;
+                }}
+                .otp-card {{
+                    background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+                    border: 1px solid #C7D2FE;
+                    border-radius: 14px;
+                    padding: 28px 20px;
+                    text-align: center;
+                    margin-bottom: 28px;
+                }}
+                .otp-label {{
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: #4338CA;
+                    letter-spacing: 1.5px;
+                    text-transform: uppercase;
+                    margin-bottom: 12px;
+                }}
+                .otp-code {{
+                    font-family: 'Courier New', Consolas, Monaco, monospace;
+                    font-size: 42px;
+                    font-weight: 800;
+                    letter-spacing: 10px;
+                    color: #312E81;
+                    margin: 0;
+                    text-shadow: 0 1px 2px rgba(49, 46, 129, 0.1);
+                }}
+                .timer-badge {{
+                    display: inline-block;
+                    margin-top: 14px;
+                    padding: 4px 12px;
+                    background-color: #E0E7FF;
+                    color: #3730A3;
+                    font-size: 12px;
+                    font-weight: 600;
+                    border-radius: 20px;
+                }}
+                .security-note {{
+                    background-color: #FEF3C7;
+                    border-left: 4px solid #F59E0B;
+                    border-radius: 6px;
+                    padding: 14px 16px;
+                    font-size: 13px;
+                    color: #92400E;
+                    line-height: 1.5;
+                    margin-bottom: 28px;
+                }}
+                .footer {{
+                    background-color: #F1F5F9;
+                    padding: 24px 32px;
+                    text-align: center;
+                    border-top: 1px solid #E2E8F0;
+                }}
+                .footer-text {{
+                    font-size: 12px;
+                    color: #64748B;
+                    margin: 0 0 8px 0;
+                }}
+                .footer-links a {{
+                    color: #4F46E5;
+                    text-decoration: none;
+                    font-size: 12px;
+                    margin: 0 8px;
+                    font-weight: 500;
+                }}
             </style>
         </head>
         <body>
-            <div class="card">
-                <div class="header">
-                    <h1>OFC HR Platform</h1>
-                </div>
-                <p>Hello <strong>{first_name}</strong>,</p>
-                <p>Welcome to OFC HR! Please use the 6-digit email verification code below to verify your account:</p>
-                
-                <div class="otp-box">{otp_code}</div>
-                
-                <p>This code will expire in <strong>15 minutes</strong>. If you did not register for an account, please ignore this email.</p>
-                
-                <div class="footer">
-                    <p>&copy; 2026 OFC HR Enterprise Platform. All rights reserved.</p>
+            <div class="wrapper">
+                <div class="container">
+                    <div class="header">
+                        <h1 class="brand-title">OFC HR</h1>
+                        <div class="brand-sub">Enterprise Management Suite</div>
+                    </div>
+                    
+                    <div class="body-content">
+                        <div class="greeting">Hello {first_name},</div>
+                        <p class="intro-text">
+                            Thank you for joining <strong>OFC HR</strong>. To complete your account setup and verify your email address, please use the secure verification code below:
+                        </p>
+                        
+                        <div class="otp-card">
+                            <div class="otp-label">Security Verification Code</div>
+                            <div class="otp-code">{otp_code}</div>
+                            <div class="timer-badge">⏱ Expires in 15 minutes</div>
+                        </div>
+                        
+                        <div class="security-note">
+                            <strong>Security Tip:</strong> Never share this code with anyone. OFC HR staff will never ask for your verification code over phone or email.
+                        </div>
+                        
+                        <p class="intro-text" style="margin-bottom: 0;">
+                            If you did not request this email, please ignore it or contact our security team if you have concerns.
+                        </p>
+                    </div>
+                    
+                    <div class="footer">
+                        <p class="footer-text">&copy; 2026 OFC HR Enterprise Platform. All rights reserved.</p>
+                        <div class="footer-links">
+                            <a href="#">Security Center</a> &bull;
+                            <a href="#">Privacy Policy</a> &bull;
+                            <a href="#">Support</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </body>
@@ -80,36 +224,144 @@ class EmailService:
 
     @classmethod
     async def send_password_reset_email(cls, to_email: str, first_name: str, reset_token: str) -> bool:
-        subject = "OFC HR - Reset Your Password"
+        subject = "OFC HR - Password Reset Request"
         reset_url = f"{settings.ALLOWED_ORIGINS[0]}/reset-password?token={reset_token}"
         html_content = f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>OFC HR Password Reset</title>
             <style>
-                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }}
-                .card {{ max-width: 500px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
-                .header {{ text-align: center; border-bottom: 2px solid #EF4444; padding-bottom: 15px; margin-bottom: 20px; }}
-                .header h1 {{ color: #EF4444; font-size: 24px; margin: 0; }}
-                .btn {{ display: block; width: 200px; margin: 25px auto; padding: 12px; background: #EF4444; color: #ffffff; text-align: center; text-decoration: none; border-radius: 6px; font-weight: bold; }}
-                .footer {{ text-align: center; color: #6B7280; font-size: 12px; margin-top: 25px; }}
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                    background-color: #F8FAFC;
+                    margin: 0;
+                    padding: 0;
+                    -webkit-font-smoothing: antialiased;
+                }}
+                .wrapper {{
+                    width: 100%;
+                    table-layout: fixed;
+                    background-color: #F8FAFC;
+                    padding: 40px 0;
+                }}
+                .container {{
+                    max-width: 560px;
+                    margin: 0 auto;
+                    background-color: #FFFFFF;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+                    border: 1px solid #E2E8F0;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #0F172A 0%, #451A03 50%, #7C2D12 100%);
+                    padding: 36px 32px;
+                    text-align: center;
+                }}
+                .brand-title {{
+                    color: #FFFFFF;
+                    font-size: 26px;
+                    font-weight: 800;
+                    letter-spacing: -0.5px;
+                    margin: 0;
+                    text-transform: uppercase;
+                }}
+                .brand-sub {{
+                    color: #FDBA74;
+                    font-size: 11px;
+                    font-weight: 600;
+                    letter-spacing: 2px;
+                    margin-top: 4px;
+                    text-transform: uppercase;
+                }}
+                .body-content {{
+                    padding: 40px 36px;
+                    color: #334155;
+                }}
+                .greeting {{
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: #0F172A;
+                    margin-top: 0;
+                    margin-bottom: 12px;
+                }}
+                .intro-text {{
+                    font-size: 15px;
+                    line-height: 1.6;
+                    color: #475569;
+                    margin-top: 0;
+                    margin-bottom: 28px;
+                }}
+                .btn-container {{
+                    text-align: center;
+                    margin: 32px 0;
+                }}
+                .btn {{
+                    display: inline-block;
+                    padding: 14px 32px;
+                    background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%);
+                    color: #FFFFFF;
+                    text-decoration: none;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: 700;
+                    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
+                }}
+                .token-box {{
+                    background-color: #F1F5F9;
+                    border: 1px solid #CBD5E1;
+                    border-radius: 8px;
+                    padding: 12px;
+                    font-family: monospace;
+                    font-size: 12px;
+                    color: #475569;
+                    word-break: break-all;
+                    margin-top: 16px;
+                }}
+                .footer {{
+                    background-color: #F1F5F9;
+                    padding: 24px 32px;
+                    text-align: center;
+                    border-top: 1px solid #E2E8F0;
+                }}
+                .footer-text {{
+                    font-size: 12px;
+                    color: #64748B;
+                    margin: 0 0 8px 0;
+                }}
             </style>
         </head>
         <body>
-            <div class="card">
-                <div class="header">
-                    <h1>Password Reset Request</h1>
-                </div>
-                <p>Hello <strong>{first_name}</strong>,</p>
-                <p>We received a request to reset your OFC HR password. Click the button below to proceed:</p>
-                
-                <a href="{reset_url}" class="btn">Reset Password</a>
-                
-                <p style="word-break: break-all; font-size: 12px; color: #6B7280;">Token: {reset_token}</p>
-                <p>This password reset token will expire in <strong>1 hour</strong>.</p>
-                
-                <div class="footer">
-                    <p>&copy; 2026 OFC HR Enterprise Platform. All rights reserved.</p>
+            <div class="wrapper">
+                <div class="container">
+                    <div class="header">
+                        <h1 class="brand-title">OFC HR</h1>
+                        <div class="brand-sub">Account Recovery</div>
+                    </div>
+                    
+                    <div class="body-content">
+                        <div class="greeting">Hello {first_name},</div>
+                        <p class="intro-text">
+                            We received a request to reset your password for your <strong>OFC HR</strong> account. Click the button below to set a new password:
+                        </p>
+                        
+                        <div class="btn-container">
+                            <a href="{reset_url}" class="btn">Reset My Password</a>
+                        </div>
+                        
+                        <p class="intro-text">This link will expire in <strong>1 hour</strong>.</p>
+                        
+                        <div class="token-box">
+                            <strong>Reset Token:</strong> {reset_token}
+                        </div>
+                    </div>
+                    
+                    <div class="footer">
+                        <p class="footer-text">&copy; 2026 OFC HR Enterprise Platform. All rights reserved.</p>
+                    </div>
                 </div>
             </div>
         </body>
