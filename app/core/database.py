@@ -4,7 +4,7 @@ from sqlalchemy.orm import DeclarativeBase
 from app.config.settings import settings
 
 engine_kwargs = {
-    "echo": settings.DEBUG,
+    "echo": False,
     "future": True,
 }
 
