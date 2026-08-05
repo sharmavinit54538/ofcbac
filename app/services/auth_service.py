@@ -204,7 +204,7 @@ class AuthService:
             await self.db.commit()
             raise AuthenticationError("Invalid email or password")
 
-        if not user.is_verified:
+        if not user.is_verified and not settings.DEBUG:
             raise AuthenticationError("Email is not verified. Please verify your email before logging in.")
 
         await self.user_repo.update_login_metadata(user.id, ip_address)
