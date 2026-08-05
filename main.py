@@ -47,19 +47,19 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configure CORS
+# Custom Middlewares
+app.add_middleware(RequestContextMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
+
+# CORSMiddleware must be the outermost middleware (added last in FastAPI)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Custom Middlewares
-app.add_middleware(RateLimitMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(RequestContextMiddleware)
 
 # Register Exception Handlers
 register_exception_handlers(app)
@@ -81,7 +81,13 @@ async def root(request: Request):
     )
 
 
-# Include Routers
+# Include Routers with /api/v1 prefix
+app.include_router(health.router, prefix=settings.API_V1_STR)
+app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(onboarding.router, prefix=settings.API_V1_STR)
+app.include_router(users.router, prefix=settings.API_V1_STR)
+
+# Also Include Routers at root for direct compatibility
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(onboarding.router)

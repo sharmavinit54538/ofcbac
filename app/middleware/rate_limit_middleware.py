@@ -14,6 +14,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.request_history = defaultdict(list)
 
     async def dispatch(self, request: Request, call_next):
+        # Bypass CORS preflight OPTIONS requests
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         client_ip = request.client.host if request.client else "127.0.0.1"
         now = time.time()
         window_start = now - 60.0  # 1 minute sliding window
