@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
     HOST: str = "0.0.0.0"
 
-    # Database (Defaults to SQLite for local zero-setup dev, overridden by .env for Supabase Postgres)
+    # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./ofc_hr.db"
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
@@ -42,6 +42,15 @@ class Settings(BaseSettings):
 
     # CORS
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173", "https://*.vercel.app"]
+
+    # SMTP / Email Configuration
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 465
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    EMAILS_FROM_EMAIL: str = "noreply@ofchr.com"
+    EMAILS_FROM_NAME: str = "OFC HR Platform"
+    SMTP_ENABLED: bool = True
 
     # Google OAuth
     GOOGLE_CLIENT_ID: str = "google_client_id_placeholder"

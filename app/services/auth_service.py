@@ -9,6 +9,7 @@ from app.repositories.user_repository import UserRepository
 from app.repositories.session_repository import SessionRepository
 from app.repositories.token_repository import TokenRepository
 from app.services.audit_service import AuditService
+from app.services.email_service import EmailService
 from app.security.hashing import hash_password, verify_password
 from app.security.jwt import create_access_token, create_refresh_token, decode_refresh_token, decode_access_token
 from app.security.tokens import hash_token, generate_otp, generate_reset_token
@@ -84,6 +85,13 @@ class AuthService:
         )
 
         await self.db.commit()
+
+        # Dispatch HTML email verification OTP code to user
+        await EmailService.send_verification_email(
+            to_email=user.email,
+            first_name=user.first_name,
+            otp_code=otp_code
+        )
 
         next_step = "/dashboard" if user.onboarding_completed else "/onboarding/status"
 
@@ -315,6 +323,14 @@ class AuthService:
             details=f"Password reset token generated for {user.email}"
         )
         await self.db.commit()
+
+        # Send HTML password reset email
+        await EmailService.send_password_reset_email(
+            to_email=user.email,
+            first_name=user.first_name,
+            reset_token=reset_token
+        )
+
         return reset_token
 
     async def reset_password(self, token: str, new_password: str) -> bool:
