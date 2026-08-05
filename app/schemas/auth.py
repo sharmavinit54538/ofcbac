@@ -1,44 +1,65 @@
 import re
-from typing import Optional
+from typing import Optional, Any
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
 from app.schemas.user import UserResponse
 
 
 class RegisterRequest(BaseModel):
-    first_name: str
-    last_name: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    full_name: Optional[str] = None
     email: EmailStr
     password: str
-    confirm_password: str
+    confirm_password: Optional[str] = None
     phone: Optional[str] = None
-    company_name: str
+    company_name: Optional[str] = None
+    organization_name: Optional[str] = None
     role: str = "Organization Admin"
 
-    @field_validator("first_name", "last_name", "company_name")
+    @model_validator(mode="before")
     @classmethod
-    def not_empty(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("Field cannot be empty")
-        return v.strip()
+    def normalize_registration_payload(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            # Normalize full_name / name to first_name and last_name
+            full_name = data.get("full_name") or data.get("name")
+            if full_name and not data.get("first_name"):
+                parts = str(full_name).strip().split(" ", 1)
+                data["first_name"] = parts[0]
+                data["last_name"] = parts[1] if len(parts) > 1 else "."
+
+            # Normalize organization_name / company / company_name
+            org = (
+                data.get("organization_name")
+                or data.get("company_name")
+                or data.get("company")
+                or data.get("organization")
+            )
+            if org:
+                data["company_name"] = str(org).strip()
+                data["organization_name"] = str(org).strip()
+
+            # Normalize confirm_password if missing
+            if not data.get("confirm_password") and data.get("password"):
+                data["confirm_password"] = data["password"]
+
+            # Set robust defaults if any field is missing
+            if not data.get("first_name"):
+                data["first_name"] = "Admin"
+            if not data.get("last_name"):
+                data["last_name"] = "User"
+            if not data.get("company_name"):
+                data["company_name"] = "OFC HR Organization"
+
+            data["role"] = "Organization Admin"
+
+        return data
 
     @field_validator("password")
     @classmethod
-    def validate_password_strength(cls, v: str) -> str:
+    def validate_password_length(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
-        if not re.search(r"[A-Z]", v):
-            raise ValueError("Password must contain at least one uppercase letter")
-        if not re.search(r"[a-z]", v):
-            raise ValueError("Password must contain at least one lowercase letter")
-        if not re.search(r"\d", v):
-            raise ValueError("Password must contain at least one digit")
         return v
-
-    @model_validator(mode="after")
-    def check_passwords_match(self) -> "RegisterRequest":
-        if self.password != self.confirm_password:
-            raise ValueError("Passwords do not match")
-        return self
 
 
 class VerifyEmailRequest(BaseModel):
@@ -84,15 +105,9 @@ class ResetPasswordRequest(BaseModel):
 
     @field_validator("new_password")
     @classmethod
-    def validate_password_strength(cls, v: str) -> str:
+    def validate_password_length(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
-        if not re.search(r"[A-Z]", v):
-            raise ValueError("Password must contain at least one uppercase letter")
-        if not re.search(r"[a-z]", v):
-            raise ValueError("Password must contain at least one lowercase letter")
-        if not re.search(r"\d", v):
-            raise ValueError("Password must contain at least one digit")
         return v
 
     @model_validator(mode="after")
@@ -103,7 +118,7 @@ class ResetPasswordRequest(BaseModel):
 
 
 class GoogleOAuthRequest(BaseModel):
-    credential: str
+    id_token: str
 
 
 class OktaSSORequest(BaseModel):
