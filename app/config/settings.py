@@ -1,5 +1,6 @@
 import os
-from typing import List, Optional
+from typing import Any, List, Optional
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,6 +20,8 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./ofc_hr.db"
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
 
@@ -43,6 +46,19 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173", "https://*.vercel.app"]
 
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, value: Any) -> List[str]:
+        if isinstance(value, str):
+            if value.startswith("[") and value.endswith("]"):
+                import json
+                try:
+                    return json.loads(value)
+                except Exception:
+                    pass
+            return [origin.strip() for origin in value.split(",") if origin.strip()]
+        return value
+
     # SMTP / Email Configuration
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 465
@@ -63,3 +79,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+

@@ -53,12 +53,17 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware)
 
 # CORSMiddleware must be the outermost middleware (added last in FastAPI)
+cors_origins = [o for o in settings.ALLOWED_ORIGINS if "*" not in o]
+cors_regex = r"https://.*\.vercel\.app"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
+    allow_origin_regex=cors_regex,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With", "X-Access-Token", "X-Auth-Token", "X-Request-ID"],
+    expose_headers=["X-Request-ID", "X-Process-Time"],
 )
 
 # Register Exception Handlers

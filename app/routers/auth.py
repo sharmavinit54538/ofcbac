@@ -2,6 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import AuthenticationError
 from app.core.database import get_async_db
 from app.core.response import success_response, error_response
 from app.config.settings import settings
@@ -152,7 +153,7 @@ async def refresh_tokens(
         refresh_token = request.cookies.get("refresh_token")
 
     if not refresh_token:
-        return error_response("Refresh token missing from request payload or cookie", request_id=getattr(request.state, "request_id", None))
+        raise AuthenticationError("Refresh token missing from request payload or cookie")
 
     auth_service = AuthService(db)
     new_tokens = await auth_service.refresh_tokens(refresh_token)

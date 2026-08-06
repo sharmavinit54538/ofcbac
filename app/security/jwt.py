@@ -1,63 +1,41 @@
-import hmac
-import hashlib
-import json
-import base64
 import uuid
+import jwt
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 from app.config.settings import settings
 from app.core.exceptions import AuthenticationError
 
 
-def _base64url_encode(data: bytes) -> str:
-    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("utf-8")
-
-
-def _base64url_decode(data: str) -> bytes:
-    padding = 4 - (len(data) % 4)
-    if padding != 4:
-        data += "=" * padding
-    return base64.urlsafe_b64decode(data.encode("utf-8"))
+def mask_token(token: Optional[str]) -> str:
+    if not token:
+        return "[NONE]"
+    t = token.strip()
+    if len(t) <= 10:
+        return "***"
+    return f"{t[:6]}...{t[-4:]}"
 
 
 def encode_jwt(payload: Dict[str, Any], secret_key: str) -> str:
-    header = {"alg": "HS256", "typ": "JWT"}
-    header_json = json.dumps(header, separators=(",", ":")).encode("utf-8")
-    payload_json = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-
-    header_b64 = _base64url_encode(header_json)
-    payload_b64 = _base64url_encode(payload_json)
-
-    signing_input = f"{header_b64}.{payload_b64}".encode("utf-8")
-    signature = hmac.new(secret_key.encode("utf-8"), signing_input, hashlib.sha256).digest()
-    signature_b64 = _base64url_encode(signature)
-
-    return f"{header_b64}.{payload_b64}.{signature_b64}"
+    return jwt.encode(payload, secret_key, algorithm=settings.JWT_ALGORITHM)
 
 
 def decode_jwt(token: str, secret_key: str) -> Dict[str, Any]:
-    parts = token.split(".")
-    if len(parts) != 3:
-        raise AuthenticationError("Invalid JWT token format")
-
-    header_b64, payload_b64, signature_b64 = parts
-    signing_input = f"{header_b64}.{payload_b64}".encode("utf-8")
-    expected_sig = hmac.new(secret_key.encode("utf-8"), signing_input, hashlib.sha256).digest()
-    actual_sig = _base64url_decode(signature_b64)
-
-    if not hmac.compare_digest(expected_sig, actual_sig):
-        raise AuthenticationError("Invalid JWT signature")
-
-    payload_json = _base64url_decode(payload_b64)
-    payload = json.loads(payload_json.decode("utf-8"))
-
-    exp = payload.get("exp")
-    if exp:
-        now_ts = int(datetime.now(timezone.utc).timestamp())
-        if now_ts > exp:
-            raise AuthenticationError("JWT token has expired")
-
-    return payload
+    if not token or not isinstance(token, str):
+        raise AuthenticationError("Invalid authentication token format")
+    try:
+        payload = jwt.decode(
+            token,
+            secret_key,
+            algorithms=[settings.JWT_ALGORITHM],
+            options={"verify_exp": True, "verify_signature": True}
+        )
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise AuthenticationError("JWT token has expired")
+    except jwt.InvalidTokenError as e:
+        raise AuthenticationError(f"Invalid authentication token: {str(e)}")
+    except Exception as e:
+        raise AuthenticationError(f"Failed to decode JWT token: {str(e)}")
 
 
 def create_access_token(
@@ -133,3 +111,4 @@ def decode_refresh_token(token: str) -> Dict[str, Any]:
     if payload.get("type") != "refresh":
         raise AuthenticationError("Invalid token type. Refresh token required.")
     return payload
+
