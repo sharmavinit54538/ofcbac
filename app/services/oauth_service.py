@@ -80,6 +80,9 @@ class OAuthService:
                 "refresh_token": refresh_data["refresh_token"],
                 "token_type": "bearer"
             },
+            "access_token": access_data["access_token"],
+            "refresh_token": refresh_data["refresh_token"],
+            "token_type": "bearer",
             "is_verified": user.is_verified,
             "onboarding_completed": user.onboarding_completed,
             "next_step": next_step
@@ -143,6 +146,9 @@ class OAuthService:
                 "refresh_token": refresh_data["refresh_token"],
                 "token_type": "bearer"
             },
+            "access_token": access_data["access_token"],
+            "refresh_token": refresh_data["refresh_token"],
+            "token_type": "bearer",
             "is_verified": user.is_verified,
             "onboarding_completed": user.onboarding_completed,
             "next_step": next_step

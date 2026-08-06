@@ -102,6 +102,9 @@ class AuthService:
                 "refresh_token": refresh_data["refresh_token"],
                 "token_type": "bearer"
             },
+            "access_token": access_data["access_token"],
+            "refresh_token": refresh_data["refresh_token"],
+            "token_type": "bearer",
             "is_verified": user.is_verified,
             "onboarding_completed": user.onboarding_completed,
             "next_step": next_step,
@@ -246,6 +249,9 @@ class AuthService:
                 "refresh_token": refresh_data["refresh_token"],
                 "token_type": "bearer"
             },
+            "access_token": access_data["access_token"],
+            "refresh_token": refresh_data["refresh_token"],
+            "token_type": "bearer",
             "is_verified": user.is_verified,
             "onboarding_completed": user.onboarding_completed,
             "next_step": next_step
@@ -297,6 +303,11 @@ class AuthService:
         await self.db.commit()
 
         return {
+            "tokens": {
+                "access_token": new_access_data["access_token"],
+                "refresh_token": new_refresh_data["refresh_token"],
+                "token_type": "bearer"
+            },
             "access_token": new_access_data["access_token"],
             "refresh_token": new_refresh_data["refresh_token"],
             "token_type": "bearer"

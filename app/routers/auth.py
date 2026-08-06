@@ -20,6 +20,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 def _set_auth_cookies(response: Response, access_token: str, refresh_token: str):
+    response.headers["X-Access-Token"] = access_token
     is_secure = settings.COOKIE_SECURE or (settings.APP_ENV != "development")
     samesite = "none" if is_secure else settings.COOKIE_SAMESITE
 

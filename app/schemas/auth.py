@@ -85,6 +85,9 @@ class AuthTokenData(BaseModel):
 class AuthResponse(BaseModel):
     user: UserResponse
     tokens: AuthTokenData
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    token_type: Optional[str] = "bearer"
     is_verified: bool
     onboarding_completed: bool
     next_step: str
