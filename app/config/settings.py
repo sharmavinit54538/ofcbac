@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./ofc_hr.db"
     SUPABASE_URL: Optional[str] = None
     SUPABASE_KEY: Optional[str] = None
+    SUPABASE_ANON_KEY: Optional[str] = None
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
 
@@ -29,6 +31,8 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = "super_secret_jwt_key_change_in_production_1234567890"
     JWT_REFRESH_SECRET_KEY: str = "super_secret_refresh_key_change_in_production_0987654321"
     JWT_ALGORITHM: str = "HS256"
+    JWT_ISSUER: str = "ofc-hr-backend"
+    JWT_AUDIENCE: str = "ofc-hr-app"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     CSRF_SECRET_KEY: str = "csrf_secret_key_change_in_production"

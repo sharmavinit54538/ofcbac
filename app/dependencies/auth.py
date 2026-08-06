@@ -15,8 +15,16 @@ def _clean_token_string(val: Optional[str]) -> Optional[str]:
     if not val:
         return None
     token = val.strip()
-    if (token.startswith('"') and token.endswith('"')) or (token.startswith("'") and token.endswith("'")):
+    # Strip quotes recursively if present
+    while (token.startswith('"') and token.endswith('"')) or (token.startswith("'") and token.endswith("'")):
         token = token[1:-1].strip()
+    # Strip double/triple 'Bearer ' prefix if present
+    while token.lower().startswith("bearer "):
+        parts = token.split(" ", 1)
+        token = parts[1].strip() if len(parts) > 1 else ""
+        while (token.startswith('"') and token.endswith('"')) or (token.startswith("'") and token.endswith("'")):
+            token = token[1:-1].strip()
+
     if token.lower() in ("null", "undefined", "none", "", "bearer"):
         return None
     return token
@@ -26,22 +34,12 @@ async def get_token_from_request(request: Request) -> str:
     # 1. Authorization header (Bearer token or raw token)
     auth_header = request.headers.get("Authorization") or request.headers.get("authorization")
     if auth_header:
-        auth_header = auth_header.strip()
-        if (auth_header.startswith('"') and auth_header.endswith('"')) or (auth_header.startswith("'") and auth_header.endswith("'")):
-            auth_header = auth_header[1:-1].strip()
-
-        if auth_header.lower().startswith("bearer "):
-            parts = auth_header.split(" ", 1)
-            if len(parts) > 1:
-                token = _clean_token_string(parts[1])
-                if token:
-                    logger.debug(f"[AUTH] Extracted Bearer token from Authorization header: {mask_token(token)}")
-                    return token
-        else:
-            token = _clean_token_string(auth_header)
-            if token and len(token) > 20:
-                logger.debug(f"[AUTH] Extracted raw token from Authorization header: {mask_token(token)}")
-                return token
+        token = _clean_token_string(auth_header)
+        if token and len(token) > 15:
+            logger.debug(f"[AUTH] Extracted Bearer/Header token from Authorization header: {mask_token(token)}")
+            return token
+        logger.warning(f"[AUTH REJECTED] Malformed or null token in Authorization header: {auth_header}")
+        raise AuthenticationError("Invalid or malformed Bearer token in Authorization header.")
 
     # 2. Alternative custom headers (X-Access-Token, X-Auth-Token)
     alt_header = (
@@ -113,6 +111,14 @@ async def get_current_user(
     if not user:
         logger.warning(f"[AUTH REJECTED] User ID {user_id_str} not found in database.")
         raise AuthenticationError("User associated with token no longer exists")
+
+    if getattr(user, "is_deleted", False):
+        logger.warning(f"[AUTH REJECTED] User {user.email} (id={user.id}) is marked as deleted.")
+        raise AuthenticationError("User account has been deleted")
+
+    if getattr(user, "is_suspended", False):
+        logger.warning(f"[AUTH REJECTED] User {user.email} (id={user.id}) is suspended.")
+        raise AuthenticationError("User account is suspended")
 
     if not getattr(user, "is_active", True):
         logger.warning(f"[AUTH REJECTED] User {user.email} (id={user.id}) is disabled/inactive.")

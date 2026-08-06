@@ -146,3 +146,42 @@ async def test_google_and_okta_login(client: AsyncClient):
     okta_res = await client.post("/auth/okta", json={"code": "okta_code_abc123", "redirect_uri": "http://localhost:3000/callback"})
     assert okta_res.status_code == 200
     assert "access_token" in okta_res.json()["data"]["tokens"]
+
+
+@pytest.mark.asyncio
+async def test_invalid_and_malformed_tokens(client: AsyncClient):
+    # Register & login user to get valid token
+    reg_res = await client.post("/auth/register", json={**REGISTER_PAYLOAD, "email": "malformed.test@example.com"})
+    otp = reg_res.json()["data"]["otp_debug"]
+    await client.post("/auth/verify-email", json={"email": "malformed.test@example.com", "otp": otp})
+
+    login_res = await client.post(
+        "/auth/login",
+        json={"email": "malformed.test@example.com", "password": REGISTER_PAYLOAD["password"]}
+    )
+    valid_token = login_res.json()["data"]["tokens"]["access_token"]
+    client.cookies.clear()
+
+    # Test 1: Bearer null -> 401
+    res = await client.get("/users/me", headers={"Authorization": "Bearer null"})
+    assert res.status_code == 401
+
+    # Test 2: Bearer undefined -> 401
+    res = await client.get("/users/me", headers={"Authorization": "Bearer undefined"})
+    assert res.status_code == 401
+
+    # Test 3: Double Bearer -> Should sanitize and return 200
+    res = await client.get("/users/me", headers={"Authorization": f"Bearer Bearer {valid_token}"})
+    assert res.status_code == 200
+
+    # Test 4: Quoted Bearer -> Should sanitize and return 200
+    res = await client.get("/users/me", headers={"Authorization": f'Bearer "{valid_token}"'})
+    assert res.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_missing_refresh_token_returns_401(client: AsyncClient):
+    res = await client.post("/auth/refresh", json={})
+    assert res.status_code == 401
+    assert res.json()["success"] is False
+

@@ -17,6 +17,14 @@ class RequireRole:
         return current_user
 
 
+# Role-specific helpers for 5-tier enterprise RBAC
+RequireSuperAdmin = RequireRole(["Super Admin"])
+RequireOrgAdmin = RequireRole(["Super Admin", "Organization Admin"])
+RequireHRManager = RequireRole(["Super Admin", "Organization Admin", "HR Manager"])
+RequireManager = RequireRole(["Super Admin", "Organization Admin", "HR Manager", "Manager"])
+RequireEmployee = RequireRole(["Super Admin", "Organization Admin", "HR Manager", "Manager", "Employee"])
+
+
 class RequirePermission:
     def __init__(self, permission_code: str):
         self.permission_code = permission_code
@@ -25,6 +33,7 @@ class RequirePermission:
         # Super Admin and Organization Admin have full access
         if current_user.role in ["Super Admin", "Organization Admin"]:
             return current_user
-        
-        # Check granular permissions attached to role if extended
+
+        # Granular permission check placeholder for custom policies
         raise PermissionDeniedError(f"Permission '{self.permission_code}' denied for user role '{current_user.role}'")
+

@@ -26,13 +26,17 @@ async def lifespan(app: FastAPI):
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables initialized successfully.")
     except Exception as e:
-        logger.error(f"Database connection error ({e}). Falling back to local SQLite database.")
-        if not settings.DATABASE_URL.startswith("sqlite"):
+        logger.critical(f"FATAL: Primary database connection failed ({e}).")
+        if settings.APP_ENV == "development" or settings.DEBUG:
+            logger.warning("Development mode detected. Falling back to local SQLite database.")
             database.engine = database._create_engine_for_url("sqlite+aiosqlite:///./ofc_hr.db")
             database.AsyncSessionLocal.configure(bind=database.engine)
             async with database.engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
             logger.info("Local SQLite fallback database initialized successfully.")
+        else:
+            logger.error("Production mode active. Ephemeral SQLite fallback disabled to prevent data loss.")
+            raise e
     yield
     logger.info(f"Shutting down {settings.APP_NAME}.")
 
